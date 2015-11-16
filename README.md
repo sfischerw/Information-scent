@@ -1,3 +1,5 @@
 # infoscent
 
-Simulating user behavior in GUIs through semantic analysis of Information Architectures. 
+Simulating user behavior in GUIs through semantic analysis of Information Architecture.
+
+ 
