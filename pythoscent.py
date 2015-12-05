@@ -41,6 +41,8 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from sklearn import datasets, linear_model
 
+from graphviz import Graph
+
 get_ipython().magic(u'pylab inline')
 
 
@@ -255,12 +257,12 @@ def score_fam_wn_NN (test_set):
 
 
 # Load tf-idf representation and dictionary mapping for tokenized corpus
-wiki = corpora.MmCorpus('latent_tok_tfidf.mm')
-mon_dico = corpora.Dictionary.load_from_text('latent_tok_wordids.txt')
+wiki = corpora.MmCorpus('../resources/latent_tok_tfidf.mm')
+mon_dico = corpora.Dictionary.load_from_text('../resources/latent_tok_wordids.txt')
 
 # Lemmatized tf-idf representation and dictionary
-wiki_lem = corpora.MmCorpus('latent_lem_tfidf.mm')
-mon_dico_lem = corpora.Dictionary.load_from_text('latent_lem_wordids.txt')
+wiki_lem = corpora.MmCorpus('../resources/latent_lem_tfidf.mm')
+mon_dico_lem = corpora.Dictionary.load_from_text('../resources/latent_lem_wordids.txt')
 
 print "Tokenized corpus:", wiki
 print mon_dico, '\n'
@@ -273,12 +275,12 @@ print mon_dico_lem
 #    - LSA and LDA: dictionary = 100,000; topics = 450
 #    - Word2vec: dictionary = 100,000; neural layers = 200
     
-tok_w2v = models.word2vec.Word2Vec.load("word2vec_tok.model")
-lem_w2v = models.word2vec.Word2Vec.load("word2vec_lem.model")
-tok_lsi = pickle.load (open ('pickle_lsi.p', 'rb'))
-tok_lda = pickle.load (open ('pickle_lda.p', 'rb'))
-lem_lsi = pickle.load (open ('pickle_lsi_lem.p', 'rb'))
-lem_lda = pickle.load (open ('pickle_lda_lem.p', 'rb'))
+tok_w2v = models.word2vec.Word2Vec.load("../resources/word2vec_tok.model")
+lem_w2v = models.word2vec.Word2Vec.load("../resources/word2vec_lem.model")
+tok_lsi = pickle.load (open ('../resources/pickle_lsi.p', 'rb'))
+tok_lda = pickle.load (open ('../resources/pickle_lda.p', 'rb'))
+lem_lsi = pickle.load (open ('../resources/pickle_lsi_lem.p', 'rb'))
+lem_lda = pickle.load (open ('../resources/pickle_lda_lem.p', 'rb'))
 
 
 # # Sniffer
@@ -520,3 +522,144 @@ def goal_matrix (test_set):
 #checking
 # (test_set_gui)
 
+# In[ ]:
+
+def sniffer_wrapper (gui, model, goal, target_feat, model_type):    
+    
+    def sniffer_logfile(gui, model, goal, target_feat, model_type, global_count = 0, seq=[]):
+        state = sim_sort(gui, model, goal, model_type)
+        found_goal = False
+
+        for label, score in state:
+            #print '"%s", %s, ' %(label, round(score, 2))
+            seq.append(label)    #seq is the sequence of steps navigated by sniffer
+            global_count += 1
+
+            if type(gui[label]) is dict:
+                found_goal, g_cnt, seq = sniffer_logfile(gui[label], model, goal, target_feat, model_type)
+                global_count += g_cnt
+
+                if found_goal:
+                    return True, global_count, seq
+                seq.append(label)
+
+            elif gui[label] == target_feat:
+                return True, global_count, seq
+
+        return False, global_count, seq   
+    
+    return sniffer_logfile(gui, model, goal, target_feat, model_type)
+
+#sniffer_wrapper(gui, tok_w2v,'invite friend play chess', 'chess', 'w2v')
+
+def graphviz_wrapper (gui, model, goal, t_feat, mod_type):    
+
+    # Instantiating graphviz object
+    dig = Graph('task', engine = 'fdp')
+    dig.body.append('size="10"')
+    dig.node_attr.update(color='floralwhite', style='filled')
+    dig.graph_attr.update(splines='curved')
+    
+    # Specifying nodes and edges from sniffer seq(uence) output
+    def nodes_edges (gui, model, goal, t_feat, mod_type):
+        log = []
+        result = []
+        result = sniffer_wrapper (gui, model, goal, t_feat, mod_type)
+        log = result[2]
+        log.insert(0, 'START')
+        log.append('END')
+
+        decallage = log[1:]
+        logfile = zip(decallage,log)
+        for line in logfile:
+            #print ( 'dig.edge("%s", "%s")' % (line[0], line[1]))
+            if model == tok_w2v:
+                dig.edge(line[0], line[1], color="green")
+            elif model == lem_w2v:
+                dig.edge(line[0], line[1], color="blue")
+            elif model == tok_lsi:
+                dig.edge(line[0], line[1], color="pink")
+            elif model == lem_lsi:
+                dig.edge(line[0], line[1], color="violet")
+    
+    nodes_edges (gui, model, goal, t_feat, mod_type)
+    return dig             
+
+#graphviz_wrapper(gui, tok_w2v,'invite friend play chess', 'chess', 'w2v')
+
+def taskBYmodel_viz(gui, test_set):
+    som = dict()
+    w2_t =[]
+    w2_l =[]
+    ls_t =[]
+    ld_t =[]
+    ls_l =[]
+    ld_l =[]
+    for t_feat, goal, bla, blah in test_set:
+        w2_t.append (graphviz_wrapper(gui, tok_w2v, goal, t_feat, 'w2v'))
+        w2_l.append (graphviz_wrapper(gui, lem_w2v, goal, t_feat, 'w2v_lem'))
+        ls_t.append (graphviz_wrapper(gui, tok_lsi, goal, t_feat, 'latent'))
+        ld_t.append (graphviz_wrapper(gui, tok_lda, goal, t_feat, 'latent'))
+        ls_l.append (graphviz_wrapper(gui, lem_lsi, goal, t_feat, 'latent_lem'))
+        ld_l.append (graphviz_wrapper(gui, lem_lda, goal, t_feat, 'latent_lem'))
+    som['w2_t'] = w2_t
+    som['w2_l'] = w2_l
+    som['ls_t'] = ls_t
+    som['ld_t'] = ld_t
+    som['ls_l'] = ls_l
+    som['ld_l'] = ld_l
+    
+    print 'Assign output to variable. \n var["model_choice"][goal number] \n Model choices: w2_t, w2_l, ls_t, ls_l, ld_t, ld_l. '
+    return som
+
+
+# In[ ]:
+
+def modelsBYtask_viz (gui, goal, t_feat):    
+
+    # Instantiating graphviz object
+    dig = Graph('task', engine = 'fdp')
+    dig.body.append('size="10"')
+    dig.node_attr.update(color='floralwhite', style='filled')
+    dig.graph_attr.update(splines='curved')
+    
+    # Specifying nodes and edges from sniffer seq(uence) output
+    def nodes_edges (gui, goal, t_feat):
+        log = []
+        result = []
+        models = [(tok_w2v, 'w2v'),(tok_lsi,'latent'),(tok_lda, 'latent'),(lem_w2v, 'w2v_lem'), 
+                  (lem_lsi, 'latent_lem'), (lem_lda, 'latent_lem')]
+        for model, mod_type in models: 
+        
+            result = sniffer_wrapper (gui, model, goal, t_feat, mod_type)
+            log = result[2]
+            log.insert(0, 'START')
+            log.append('END')
+
+            decallage = log[1:]
+            logfile = zip(decallage,log)
+            for line in logfile:
+                #print ( 'dig.edge("%s", "%s")' % (line[0], line[1]))
+                if model == tok_w2v:
+                    dig.edge(line[0], line[1], color="lightblue")
+                elif model == lem_w2v:
+                    dig.edge(line[0], line[1], color="blue")
+                elif model == tok_lsi:
+                    dig.edge(line[0], line[1], color="pink")
+                elif model == lem_lsi:
+                    dig.edge(line[0], line[1], color="violet")
+    
+    print 'Pinkishes are LSA, Blueishes are w2v, lemmatized is brighter'
+    nodes_edges (gui, goal, t_feat)
+    return dig             
+
+
+
+# In[ ]:
+
+def modelsBYset_viz (gui, test_set):
+    my_dig = None
+    dig_list = []
+    for t_feat, goal, c, d in test_set:
+        dig_list.append  (modelsBYtask_viz(gui, goal, t_feat))
+    return dig_list 
