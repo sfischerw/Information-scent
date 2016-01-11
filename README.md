@@ -19,7 +19,7 @@ The 3 models (LSA, LDA, word2vec) are trained with plain English and lemmatized 
 
 # Results
 
-<img src="files/results_experiment_1.png" width=400 />
+<img src="files/results_experiment_1.png" width=900 />
 
 The LDA model performed poorly, probably because IA labels are too concise
 
