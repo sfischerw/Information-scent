@@ -2,22 +2,27 @@
 # coding: utf-8
 
 # Functions:
-# 
+#                                                                    # rather have them resources (dico,model pickles)
 # - file2ia (your_file)
 #         + copy/paste output to dictionary variable (e.g., gui_n = {})
 # - ia2d3(gui_n)
 # - ia2test_set(gui_n)
-#         + copy/paster output to list variable (e.g., test_set_n)   #do not forget comas after each tupple
-# - score_fam_wn/NN (test_set_n)                                     #text processing issues here
-# - load dico, matrices and model pickles
-#                                                                    #- model_test(gui_n, test_set_n, model, model_type)
+#         + copy/paste output to list variable (e.g., test_set_n)    #add commas after each tupple
+#                                                                    #text processing issues with score_fam functions
+# 
 # - test2df (gui_n, test_set_n)                                      #text processing issues here too
 #         + give output to variable name (e.g., data_gui_n)
 # - plots (data_frame)
 # - anovas (data_frame)
 # - regressions (data_frame)
 # - goal_matrix (data_frame)
+# - taskBYmodel_viz(gui, test_set)                                   # var['ls_l'][0]
+# - modelsBYtask_viz(gui,'goal', 'target feature')
+# - modelsBYset_viz(gui, test_set_gui)                               # var[3]
+# - MC_experiment(gui_n, 'made_up_goal', tok_w2v, 'w2v', 10000)
+# 
 
+# In[1]:
 
 import pickle, operator, json, requests
 
@@ -35,19 +40,19 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from graphviz import Graph
 
 # Statistics and Machine-learning modules
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from sklearn import datasets, linear_model
 
-from graphviz import Graph
-
 get_ipython().magic(u'pylab inline')
 
 
 # # IA handling
 
+# In[ ]:
 
 def file2ia (your_file):
     
@@ -120,8 +125,28 @@ def file2ia (your_file):
     return GUI
 
 # checking
-#file2ia ('gui_5')
+#file2ia ('../resources/gui_5')
 
+
+# In[2]:
+
+gui5 = {"car":{ "air conditioning":{ "ventilation settings": "ventilation settings","pulse": "pulse", "continuous": "continuous"}, 
+                                    "filter settings":{ "recycle interior air": "recycle interior air", "charcoal mode": "charcoal mode", "pollen mode": "pollen mode"}, 
+                                    "temperature settings":{ "display current temperature": "display current temperature", "hotter": "hotter", "colder": "colder"}}, 
+                "driving assistance":{ "cruise control":{ "activate": "activate", "turn off": "turn off"}, 
+                                        "anti theft protection":{ "choose notification recipient": "choose notification recipient", 
+                                        "phone pairing tracking": "phone pairing tracking", "stop vehicle": "stop vehicle"},
+                                        "lane change alert":{ "vibrate steering wheel": "vibrate steering wheel", "vibrate pedal": "vibrate pedal", "vibrate rear view mirrors": "vibrate rear view mirrors"},
+                                        "gps":{ "check current coordinates": "check current coordinates", "enter destination": "enter destination", "recent destination": "recent destination"}},
+                "entertainment":{ "gaming":{ "poker": "poker", "chess": "chess", "online apps": "online apps"},
+                                 "television":{ "documentaries": "documentaries", "movies sorted":{ "genre": "genre", "rating": "rating", "release date": "release date"}, 
+                                                                "tv series": "tv series"},
+                                                                "radio":{ "classic": "classic", "pop": "pop", "electronic": "electronic"}},
+                        "phone":{ "contact lists":{ "family": "family", "work": "work", "emergency": "emergency"}, "dial": "dial", "voice mail":{ "listen messages": "listen messages", 
+                                                                    "erase last message": "erase last message", "change greetings": "change greetings"}, "pay bills": "pay bills"}}
+
+
+# In[ ]:
 
 # This function generates IA description and syntax for drawing D3 dendrograms
 
@@ -147,6 +172,7 @@ def ia2d3 (dico):
 
 # # Test set generation
 
+# In[95]:
 
 def wraper1 (gui):
     
@@ -163,6 +189,7 @@ def wraper1 (gui):
     return list_gui_target_features (gui)
 
 
+# In[96]:
 
 def wraper2 (gui, glob): 
     
@@ -177,6 +204,7 @@ def wraper2 (gui, glob):
     return steps_to_targ_feat(gui, glob)
 
 
+# In[ ]:
 
 def ia2test_set(gui):
     f1 = wraper1 (gui)
@@ -188,19 +216,25 @@ def ia2test_set(gui):
             temp.append(n)
         temp.append(f2[i])
         f3.append(tuple(temp))
-    for t in f3:
-        print t
-    #return f3
+    return f3
     
 # checking
 #test_set_inter = ia2test_set(gui5)
 #for t in test_set_inter:
- #   print t
+#    print t
 
+
+# In[3]:
+
+test_set_gui = [('pay bills', 'pay monthly phone plan', 'basic', 2),
+('family', 'display address my parents', 'basic', 3),
+('change greetings', 'record message welcoming message', 'technical', 3),
+('rating', 'list best movies', 'technical', 4)]
 
 
 # # Wordnet Technicality check
 
+# In[12]:
 
 def score_fam_wn (test_set):
     from nltk.corpus import wordnet as wn, stopwords
@@ -221,7 +255,7 @@ def score_fam_wn (test_set):
         av_polys = float(g_polys)/float(w_count)
         wn_fam.append(round(av_polys, 2))
 
-    print sorted(wn_fam), '   >> wordnet familiarity' 
+    #print sorted(wn_fam), '   >> wordnet familiarity' 
     return wn_fam
     
 def score_fam_wn_NN (test_set):
@@ -246,15 +280,16 @@ def score_fam_wn_NN (test_set):
         av_polys = float(g_polys)/float(w_count)
         wn_fam_NN.append(round(av_polys, 2))
 
-    print sorted(wn_fam_NN), '   >> wordnet familiarity for NN pos only'
+    #print sorted(wn_fam_NN), '   >> wordnet familiarity for NN pos only'
     return wn_fam_NN
 
-#wn_fam = score_fam_wn (test_set_gui)
-#wn_fam_NN = score_fam_wn_NN (test_set_gui)
+score_fam_wn (test_set_gui)
+score_fam_wn_NN (test_set_gui)
 
 
-# # Models
+# # Load models
 
+# In[13]:
 
 # Load tf-idf representation and dictionary mapping for tokenized corpus
 wiki = corpora.MmCorpus('../resources/latent_tok_tfidf.mm')
@@ -264,17 +299,15 @@ mon_dico = corpora.Dictionary.load_from_text('../resources/latent_tok_wordids.tx
 wiki_lem = corpora.MmCorpus('../resources/latent_lem_tfidf.mm')
 mon_dico_lem = corpora.Dictionary.load_from_text('../resources/latent_lem_wordids.txt')
 
-print "Tokenized corpus:", wiki
-print mon_dico, '\n'
-print "Lemmatized corpus:", wiki_lem
-print mon_dico_lem
+#print "Tokenized corpus:", wiki
+#print mon_dico, '\n'
+#print "Lemmatized corpus:", wiki_lem
+#print mon_dico_lem
 
+
+# In[14]:
 
 # Load model pickles
-# Model training parameters:
-#    - LSA and LDA: dictionary = 100,000; topics = 450
-#    - Word2vec: dictionary = 100,000; neural layers = 200
-    
 tok_w2v = models.word2vec.Word2Vec.load("../resources/word2vec_tok.model")
 lem_w2v = models.word2vec.Word2Vec.load("../resources/word2vec_lem.model")
 tok_lsi = pickle.load (open ('../resources/pickle_lsi.p', 'rb'))
@@ -283,116 +316,213 @@ lem_lsi = pickle.load (open ('../resources/pickle_lsi_lem.p', 'rb'))
 lem_lda = pickle.load (open ('../resources/pickle_lda_lem.p', 'rb'))
 
 
+# In[7]:
+
+# Load dico pickles
+dico_tok = pickle.load(open('../resources/pickle_dicotok.p', 'rb'))
+dico_lem = pickle.load(open('../resources/pickle_dicolem.p', 'rb'))
+w2id_l = pickle.load(open('../resources/pickle_w2idlem.p', 'rb'))
+w2id_t = pickle.load(open('../resources/pickle_w2idtok.p', 'rb'))
+
+
 # # Sniffer
 
-def sim_sort(state, model, goal, model_type):
-    sorted_sims = []
-    similaritiz = {}
-    goal_v = []
+# In[15]:
+
+def filter_goal (model, goal, model_type, goal_v = []):
+    filter_text_wt = lambda text: [word for word in text if word in w2id_t]
+    filter_text_wl = lambda text: [word for word in text if word in w2id_l]
+    filter_text = lambda text: [word for word in text if word in dico_tok] 
+    filter_text_l = lambda text: [word for word in text if word in dico_lem]
     
-    # Word2Vec models
-    if (model_type == "w2v") or (model_type == "w2v_lem"):
-        
-        goal_v = goal.lower().split()
+    # if Word2Vec models
+    if (model_type == "w2v") or (model_type == "w2v_lem"):    
+        split_goal = goal.lower().split()
+        goal_v = filter_text_wt (split_goal)
+
         if model_type == "w2v_lem":
-            goal_v = utils.lemmatize(goal)
-
-        for label in state.keys():
-            k = label.split()
-            if model_type == "w2v_lem":
-                k = utils.lemmatize(label)
-            sim = model.n_similarity(k, goal_v)
-            similaritiz[label]=sim          #adding the similarity scores for any label
-
-    # LSI/LDA models
+            lemm_goal = utils.lemmatize(goal)
+            goal_v = filter_text_wl (lemm_goal)
+    
+    # if latent models
     elif (model_type == "latent") or (model_type == "latent_lem"):
+        split_goal = goal.lower().split()
+        filter_goal = filter_text(split_goal)
+        goal_bow = mon_dico.doc2bow(filter_goal)
         
-        goal_split = goal.lower().split()
-        goal_bow = mon_dico.doc2bow(goal_split)
         if model_type == "latent_lem":
-            goal_bow = mon_dico_lem.doc2bow(utils.lemmatize(goal))
+            filter_goal = filter_text_l(utils.lemmatize(goal)) #postag the goal
+            goal_bow = mon_dico_lem.doc2bow(filter_goal)
         goal_v = model[goal_bow]
+    
+    return goal_v     
+
+# Checking
+#print filter_goal (lem_w2v, 'call your parents', 'w2v_lem')
+#print filter_goal (tok_w2v, 'call your parents', 'w2v')
+#print filter_goal (lem_lsi, 'call your parents', 'latent_lem')
+#print filter_goal (lem_lda, 'call your parents', 'latent_lem')
+
+
+# In[16]:
+
+def filter_state (state, model, model_type):
+    filter_text_wt = lambda text: [word for word in text if word in w2id_t]
+    filter_text_wl = lambda text: [word for word in text if word in w2id_l]
+    filter_text = lambda text: [word for word in text if word in dico_tok] 
+    filter_text_l = lambda text: [word for word in text if word in dico_lem]
+    
+    # if Word2Vec models
+    if (model_type == "w2v") or (model_type == "w2v_lem"):
+        filtered_labels = []
+        for label in state.keys():
+            
+            split_label = label.split()
+            filtered_label = filter_text_wt (split_label)
+            #filtered_labels.append(filtered_label)
+            
+            if model_type == "w2v_lem":
+                split_label = utils.lemmatize(label)
+                filtered_label = filter_text_wl (split_label)
+            filtered_labels.append(filtered_label)
         
+        return filtered_labels
+    
+    
+    elif (model_type == "latent") or (model_type == "latent_lem"):
         ar = []
         for label in state.keys():
-            k = label.split()
+            split_label = label.split()
+            filter_label = filter_text(split_label)
+            
             if model_type == "latent_lem":
-                k = utils.lemmatize(label)
-            ar.append(k)
-
+                filter_label = filter_text_l(utils.lemmatize(label))
+            ar.append(filter_label)
+        
         state2index = [mon_dico.doc2bow(txt) for txt in ar]
         if model_type == "latent_lem":
             state2index = [mon_dico_lem.doc2bow(txt) for txt in ar]
+        
+        return state2index        
+
+# Checking    
+#filter_state (gui5, tok_w2v, 'w2v')
+#filter_state (gui5, lem_lsi,'latent_lem')
+
+
+# In[21]:
+
+def get_sorted_similarity (state, model, goal, model_type):
+    sorted_sims = []
+    similaritiz = {}
+    
+    if (model_type == "w2v") or (model_type == "w2v_lem"):
+        filtered_goal = filter_goal(model, goal, model_type)
+        filtered_state = filter_state (state, model, model_type)
+        for i, fs in enumerate(filtered_state):
+            sim = model.n_similarity(fs, filtered_goal)
+            similaritiz[state.keys()[i]] = np.around(sim, decimals=3)   #adding the similarity scores for any label
+            # Check in case similarity score is an array
+            if str(type(np.around(sim, decimals=3))) == "<type 'numpy.ndarray'>":
+                similaritiz[state.keys()[i]] = 0
+        
+    # LSI/LDA models
+    elif (model_type == "latent") or (model_type == "latent_lem"):
+        filtered_goal = filter_goal(model, goal, model_type)
+        state2index = filter_state (state, model, model_type)
+
         index = similarities.MatrixSimilarity(model[state2index], num_features=29000)
-        indexed_scores = list(index[goal_v])
-        
-        for index, score in enumerate(indexed_scores):       #this could be replaced by zip()
+        indexed_scores = list(index[filtered_goal])
+        for index, score in enumerate(indexed_scores):
             label = state.keys()[index]
-            similaritiz[label] = score
-        
-    sorted_sims = sorted(similaritiz.items(), key=operator.itemgetter(1), reverse = True) 
-    #print sorted_sims
+            similaritiz[label] = np.around(score, decimals=3) # round(score,3)
+            # Check in case similarity score is an array
+            if str(type(np.around(score, decimals=3))) == "<type 'numpy.ndarray'>":
+                similaritiz[label] = 0
+
+    # Return label/scores dict sorted by values
+    sorted_sims = sorted(similaritiz.items(), key=operator.itemgetter(1), reverse=True) 
     return sorted_sims                              #returns a list of tuples i.e [(,), (,)]
 
+# Checking
+#print get_sorted_similarity(gui5, lem_w2v, 'call your parents', 'w2v_lem')
+#print get_sorted_similarity(gui5, tok_w2v, 'call your parents', 'w2v')
+#print get_sorted_similarity(gui5, lem_lsi, 'call your parents', 'latent_lem')
+#print get_sorted_similarity(gui5, tok_lsi, 'call your parents', 'latent'), "\n"
 
-#Check output
-#print sim_sort(gui5, tok_w2v, 'cook chicken', 'w2v'), "\n"
-#print sim_sort(gui5, lem_lsi, 'cook chicken', 'latent_lem'), "\n"
-#print sim_sort(gui5, tok_lsi, 'cook chicken', 'latent'), "\n"
+#print get_sorted_similarity(gui5, tok_w2v, 'call your parents as soon as you reach the shopping center', 'w2v')
+#print get_sorted_similarity(gui5, lem_lsi, 'call your parents as soon as you reach the shopping center', 'latent_lem')
+#print get_sorted_similarity(gui5, tok_lsi, 'call your parents as soon as you reach the shopping center', 'latent')
 
 
-def sniffer_metrics(gui, model, goal, target_feat, model_type, global_count = 0):
-    
-    state = sim_sort(gui, model, goal, model_type)    #returned content must be assigned to a variable
+# In[ ]:
+
+def sniffer_steps(gui, model, goal, target_feat, model_type, global_count = 0):
+    sorted_state = get_sorted_similarity(gui, model, goal, model_type)
     found_goal = False
-    for label, score in state:
+    #print sorted_state
+    for label, score in sorted_state:
+        #print label, score
         global_count += 1
-        
         if type(gui[label]) is dict:
-            found_goal, g_cnt = sniffer_metrics(gui[label], model, goal, target_feat, model_type)
+            found_goal, g_cnt = sniffer_steps(gui[label], model, goal, target_feat, model_type)
             global_count += g_cnt
             if found_goal:
                 return True, global_count
     
         elif gui[label] == target_feat:
             return True, global_count
-
+    
     return False, global_count
 
-# Check output
-# sniffer_metrics(gui5, tok_w2v, 'turn off cruise control', 'activate', 'w2v'), '\n'
+# Checking
+#print sniffer_steps(gui5, tok_w2v, 'check how much I scored last week at chess tournament', 'chess', 'w2v'), '\n'
+#print sniffer_steps(gui5, tok_w2v, 'control my speed on the highway', 'activate', 'w2v'), '\n'
+#print sniffer_steps(gui5, tok_w2v, 'let me drive full speed', 'turn off', 'w2v'), '\n'
+
+#print sniffer_steps(gui5, lem_w2v, 'check how much I scored last week at chess tournament', 'chess', 'w2v_lem'), '\n'
+#print sniffer_steps(gui5, lem_w2v, 'control my speed on the highway', 'activate', 'w2v_lem'), '\n'
+#print sniffer_steps(gui5, lem_w2v, 'let me drive full speed', 'turn off', 'w2v_lem'), '\n'
+
+
+#print sniffer_steps(gui5, lem_w2v, 'disable overtaking alarm', 'vibrate pedal', 'w2v_lem'), '\n'
+#print sniffer_steps(gui5, lem_lsi, 'disable overtaking alarm', 'vibrate pedal', 'latent_lem'), '\n'
+#print sniffer_steps(gui5, tok_lda, 'set the alarm that I am being overtaken to be on the pedal', 'vibrate pedal', 'latent'), '\n'
 
 
 # # Model tester
 
+# In[ ]:
 
 def model_test(gui, test_set, model, model_type):
     
-    wn_fam = score_fam_wn (test_set)
-    wn_fam_NN = score_fam_wn_NN (test_set)
+    wn_fam = score_fam_wn (test_set_gui)
+    wn_fam_NN = score_fam_wn_NN (test_set_gui)
     
     test_metrics =[]
     goal_l = []
     target_l=[]
     prescrit=[]
     fam = []
+    
     for a, b, c, d in test_set:
         goal_l.append(b)
         target_l.append(a)
         fam.append(c)
         prescrit.append(d)
-        result = sniffer_metrics(gui, model, b, a, model_type)
+        result = sniffer_steps(gui, model, b, a, model_type)
         test_metrics.append(result[1])
-    print test_metrics
+    
+    #print test_metrics
     return zip(target_l, goal_l, test_metrics, prescrit, fam, wn_fam, wn_fam_NN)
 
 # checking
-# model_test(gui5, test_set_gui, tok_w2v, 'w2v')
+#model_test(gui5, test_set_gui, tok_w2v, 'w2v')
 
 
 # # Dataframe
 
-# In[23]:
+# In[ ]:
 
 def test2df (gui_n, test_set_n):
     tok_w2v_test = model_test(gui_n, test_set_n, tok_w2v, 'w2v')
@@ -432,8 +562,20 @@ def test2df (gui_n, test_set_n):
 
     return df_gui_n
 
+#checking
+#
+#a = test2df (gui5, test_set_gui)
+#a.head (5)
+
+
+# In[109]:
+
+
+
 
 # # Results
+
+# In[110]:
 
 def plots (data_frame):
     #boxplots
@@ -449,7 +591,7 @@ def plots (data_frame):
 
 def regressions (data_frame):
     selecta = data_frame[data_frame['model'] != 'lda']
-    print 'Regression familiarity vs wn_NN'
+    #print 'Regression familiarity vs wn_NN'
 
     X = selecta['wn_familiarity_NN']
     Y = selecta['counts']
@@ -463,13 +605,13 @@ def regressions (data_frame):
     plt.show()
 
     # The coefficients
-    print 'Coefficients: %.3f' % regr.coef_[0]
+    #print 'Coefficients: %.3f' % regr.coef_[0]
     # The mean square error
-    print "Mean residual sum of squares: %.1f" % np.mean((regr.predict(X[:,np.newaxis]) - Y) ** 2)
+    #print "Mean residual sum of squares: %.1f" % np.mean((regr.predict(X[:,np.newaxis]) - Y) ** 2)
     # Explained variance score: 1 is perfect prediction
-    print('Variance of Y explained by X: %.3f' % regr.score(X[:,np.newaxis], Y))
+    #print('Variance of Y explained by X: %.3f' % regr.score(X[:,np.newaxis], Y))
     
-    print 'Regression familiarity vs wn'
+    #print 'Regression familiarity vs wn'
     X = selecta['wn_familiarity']
     Y = selecta['counts']
 
@@ -482,30 +624,62 @@ def regressions (data_frame):
     plt.show()
 
     # The coefficients
-    print 'Coefficients: %.3f' % regr.coef_[0]
+    #print 'Coefficients: %.3f' % regr.coef_[0]
     # The mean square error
-    print "Mean residual sum of squares: %.1f" % np.mean((regr.predict(X[:,np.newaxis]) - Y) ** 2)
+    #print "Mean residual sum of squares: %.1f" % np.mean((regr.predict(X[:,np.newaxis]) - Y) ** 2)
     # Explained variance score: 1 is perfect prediction
-    print('Variance of Y explained by X: %.3f' % regr.score(X[:,np.newaxis], Y))
+    #print('Variance of Y explained by X: %.3f' % regr.score(X[:,np.newaxis], Y))
     
 def anovas (data_frame):
     
     anova_result = ols('counts ~ C(model, Sum)*C(prepping, Sum)*C(familiarity, Sum)',
                data=data_frame).fit()
     table = sm.stats.anova_lm(anova_result, typ=2) # Type 2 ANOVA DataFrame
-    print table
+    #print table
 
+
+# In[ ]:
+
+# checking
+#plots (a)
+
+
+# In[ ]:
+
+#anovas (a)
+
+
+# In[ ]:
+
+#regressions (a)
+
+
+# # Visualizations
+
+# In[ ]:
+
+# this is to see how sensible is your test_set and how much it has been trimmed by the filtering functions
+# Only done for w2v tokenized
 
 def goal_matrix (test_set):
+    filtered_set = list(test_set)
+    filter_text = lambda text: [word for word in text.split() if word in w2id_t]
+    
+    for i,line in enumerate(filtered_set):
+        f = filter_text(line[0])
+        g = filter_text(line[1])
+        filtered_set[i]= (' '.join(f), ' '.join(g), line[2], line[3])
+    print filtered_set
+    
     goal_index = []
-    for goal in test_set:
+    for goal in filtered_set:
         goal_index.append(goal[1])
 
     sim_heatmap = pd.DataFrame(index=goal_index)
 
-    for i, feat in enumerate(test_set):
+    for i, feat in enumerate(filtered_set):
         sim_features = []
-        for j, goal in enumerate(test_set):
+        for j, goal in enumerate(filtered_set):
             sim_features.append(tok_w2v.n_similarity(feat[0].split(), goal[1].split()) )
         sim_heatmap[feat[0]] = sim_features
     sim_heatmap.head()
@@ -520,14 +694,14 @@ def goal_matrix (test_set):
                 linewidths=.5, cbar_kws={"shrink": .5}, ax=ax)
     
 #checking
-# (test_set_gui)
+#goal_matrix (test_set_gui)
 
-# In[ ]:
+# In[124]:
 
 def sniffer_wrapper (gui, model, goal, target_feat, model_type):    
     
     def sniffer_logfile(gui, model, goal, target_feat, model_type, global_count = 0, seq=[]):
-        state = sim_sort(gui, model, goal, model_type)
+        state = get_sorted_similarity(gui, model, goal, model_type)
         found_goal = False
 
         for label, score in state:
@@ -587,6 +761,11 @@ def graphviz_wrapper (gui, model, goal, t_feat, mod_type):
 
 #graphviz_wrapper(gui, tok_w2v,'invite friend play chess', 'chess', 'w2v')
 
+
+# In[127]:
+
+# this is to graphviz any given task of your test set for any chosen model
+
 def taskBYmodel_viz(gui, test_set):
     som = dict()
     w2_t =[]
@@ -612,8 +791,19 @@ def taskBYmodel_viz(gui, test_set):
     print 'Assign output to variable. \n var["model_choice"][goal number] \n Model choices: w2_t, w2_l, ls_t, ls_l, ld_t, ld_l. '
     return som
 
+# Checking
+#t = taskBYmodel_viz(gui5, test_set_gui)
+
 
 # In[ ]:
+
+#t['w2_t'][1]
+
+
+# In[ ]:
+
+# this is to graphviz any made-up task (goal description + target feature) for all 4 trained models
+# trained models are LSA and w2v, lemmatized and tokenized
 
 def modelsBYtask_viz (gui, goal, t_feat):    
 
@@ -649,17 +839,166 @@ def modelsBYtask_viz (gui, goal, t_feat):
                 elif model == lem_lsi:
                     dig.edge(line[0], line[1], color="violet")
     
-    print 'Pinkishes are LSA, Blueishes are w2v, lemmatized is brighter'
+    #print 'Pinkishes are LSA, Blueishes are w2v, lemmatized is brighter'
     nodes_edges (gui, goal, t_feat)
     return dig             
 
+# Checking
+#modelsBYtask_viz (gui5, 'do your daily chess training', 'chess')
 
 
-# In[ ]:
+# In[119]:
 
+# this is to graphviz your test set for all 4 trained models
 def modelsBYset_viz (gui, test_set):
     my_dig = None
     dig_list = []
     for t_feat, goal, c, d in test_set:
         dig_list.append  (modelsBYtask_viz(gui, goal, t_feat))
     return dig_list 
+
+
+# In[ ]:
+
+h = modelsBYset_viz (gui5, test_set_gui)
+h[0]
+
+
+# # Basic MC simulation using w2v
+def MC_experiment(gui, goal, model, model_type, N):
+
+    def get_weights (state, goal, model, model_type, weights={}):
+
+        # Filter goal and features in current state
+        filtered_goal = filter_goal(model, goal, model_type)
+        filtered_state = filter_state (state, model, model_type)
+
+        # Store the labels
+        label_list = []
+
+        if (model_type == "w2v") or (model_type == "w2v_lem"):
+            for i, label in enumerate(filtered_state):
+                label_list.append(model.n_similarity(label, filtered_goal))
+                if type(state[state.keys()[i]]) is dict:
+                    get_weights (state[state.keys()[i]], goal, model, model_type, weights)
+
+        # Use absolute values for cosine similarities
+        #print type(label_list), len(label_list)
+        arr = np.array(label_list)
+        val_abs = abs(arr)
+        # Normalize so weights --> probabilities
+        reweighted = val_abs.transpose()/np.sum(val_abs, axis=0).transpose()
+
+        # Zip up labels w/ corresponding weights
+        for label, proba in zip (state.keys(), reweighted):
+            weights[label] = proba  
+
+        return weights
+
+    goal_weights = get_weights(gui, goal, model, model_type)
+
+    def simulate_1_pass_down (state, w, counts = {}):
+        #w = get_weights (state, goal, model, model_type,  weights={})
+        labels = state.keys()
+        poids = [w[label] for label in labels]
+
+        # Winner will be an array of length 1, so...
+        probs = np.array(poids)
+        probs /= probs.sum()
+        winner = np.random.choice(labels, 1, p = probs)
+        # Convert to string
+        winner = winner[0]
+
+        if winner in counts:
+            counts[winner] += 1
+        else:
+            counts[winner] = 1
+        if type(state[winner]) is dict:
+            simulate_1_pass_down (state[winner], w)
+
+        return counts
+
+    output = ""
+    for i in range(N):
+        output = simulate_1_pass_down (gui, goal_weights)
+        
+    return output
+# In[17]:
+
+def MC_experiment(gui, goal, model, model_type, N):
+
+    def get_weights (state, goal, model, model_type, weights={}):
+
+        # Filter goal and features in current state
+        filtered_goal = filter_goal(model, goal, model_type)
+        filtered_state = filter_state (state, model, model_type)
+
+        # Store the labels
+        label_list = np.array([])
+
+        if (model_type == "w2v") or (model_type == "w2v_lem"):
+            for i, label in enumerate(filtered_state):
+                #label_list.append(model.n_similarity(label, filtered_goal))
+                label_list = np.append(label_list, np.array(model.n_similarity(label, filtered_goal)))
+                if type(state[state.keys()[i]]) is dict:
+                    get_weights (state[state.keys()[i]], goal, model, model_type, weights)
+
+        # Use absolute values for cosine similarities
+        arr = np.array(label_list)
+        val_abs = np.absolute(arr)
+        
+        # Normalize so weights --> probabilities
+        reweighted = val_abs.transpose()/np.sum(val_abs, axis=0).transpose()
+
+        # Zip up labels w/ corresponding weights
+        for label, proba in zip (state.keys(), reweighted):
+            weights[label] = proba  
+
+        return weights
+
+    goal_weights = get_weights(gui, goal, model, model_type)
+
+    def simulate_1_pass_down (state, w, counts = {}):
+        #w = get_weights (state, goal, model, model_type,  weights={})
+        labels = state.keys()
+        poids = [w[label] for label in labels]
+
+        # Winner will be an array of length 1, so...
+        probs = np.array(poids)
+        probs /= probs.sum()
+        winner = np.random.choice(labels, 1, p = probs)
+        # Convert to string
+        winner = winner[0]
+
+        if winner in counts:
+            counts[winner] += 1
+        else:
+            counts[winner] = 1
+        if type(state[winner]) is dict:
+            simulate_1_pass_down (state[winner], w)
+
+        return counts
+
+    output = ""
+    for i in range(N):
+        output = simulate_1_pass_down (gui, goal_weights)
+        
+    return output
+
+
+# In[18]:
+
+#mc_results = MC_experiment(gui5, 'dial', tok_w2v, 'w2v', 10000)
+
+
+# In[19]:
+
+#sorted_mc_rez = sorted(mc_results.items(), key=operator.itemgetter(1), reverse = True)
+#for s in sorted_mc_rez:
+#    print s
+
+
+# In[ ]:
+
+
+
