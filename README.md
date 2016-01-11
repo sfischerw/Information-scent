@@ -1,4 +1,4 @@
-# Pythoscent
+# Information scent analysis
 
 This notebook **simulates** user exploration of graphical user interfaces (GUIs) through **semantic analysis of their menus and labels**. 
 
