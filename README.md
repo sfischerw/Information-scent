@@ -24,7 +24,7 @@ The 3 models (LSA, LDA, word2vec) are trained with plain English and lemmatized 
 
 Procedures/functions: pythoscent.py
 
-Examples: Pythoscent_analysis_example_20151120.ipynb and Pythoscent_analysis_example_20151120.ipynb
+Examples: Pythoscent_analysis_example_20151120.ipynb and Pythoscent_analysis_example_20160110.ipynb
 
 ## Results
 
