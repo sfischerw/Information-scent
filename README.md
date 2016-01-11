@@ -1,5 +1,7 @@
 # Information scent analysis
 
+## Overview
+
 This notebook **simulates** user exploration of graphical user interfaces (GUIs) through **semantic analysis of their menus and labels**. 
 
 Users are assumed to navigate the menu architecture (aka **information architecture or IA**) of GUIs by **iteratively clicking on the feature label the most similar, semantically, to a goal**. While this "means-end analysis" strategy insures convergence to the goal, navigation errors occur, which practitioners (designers, information architects) typically assess during user tests. 
@@ -10,14 +12,20 @@ Here, infoscent is generalized to simulating the semantic exploration of GUI mat
 - **Latent Dirichlet Analysis (LDA)**
 - **Word Vector Representation (Word2Vec)**
 
-The 3 models (LSA, LDA, word2vec) are trained with plain English and lemmatized tokenizations.
+## Materials
 
+The 3 models (LSA, LDA, word2vec) are trained with plain English and lemmatized tokenizations.
 
 <b> Example of the IA of an GUI (represented as a d3.js dendrogram): </b>
 
 <img src="files/D3_gui3.png" width=400 />
 
-# Results
+## Analysis
+
+Procedures/functions: pythoscent.py
+Examples: Pythoscent_analysis_example_20151120.ipynb and Pythoscent_analysis_example_20151120.ipynb
+
+## Results
 
 <img src="files/results_experiment_1.png" width=900 />
 
